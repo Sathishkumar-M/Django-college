@@ -91,10 +91,8 @@ class StudentAPIView(mixins.CreateModelMixin,generics.ListAPIView):
 class StudentRudView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'pk'
     serializer_class = StudentSerializer
+    queryset = Student.objects.all()
     # permission_classes = [IsOwnerOrReadOnly]
-    #
-    # def get_queryset(self):
-    #     return Student.objects.all()
 
     def get(self, request, pk, format=None):
         try:
@@ -116,28 +114,37 @@ class StudentRudView(generics.RetrieveUpdateDestroyAPIView):
             }
             return Response(context, status=status.HTTP_404_NOT_FOUND)
 
-    def put(self,request,*args,**kwargs):
-        # return self.update(request,*args,**kwargs)
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
+    def put(self,request, pk,*args,**kwargs):
+        try:
+            obj = Student.objects.get(pk=pk)
+            serializer = self.get_serializer(data=request.data)
+            print(serializer.is_valid())
+            if not serializer.is_valid():
+                context = {
+                    'message': 'Errors in your request.',
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'errors': {
+                        'detail': serializer.errors,
+                    },
+                }
+                return Response(context, status=status.HTTP_400_BAD_REQUEST)
+            # serializer.update(request.data,obj)
+            self.update(request,*args,**kwargs)
             context = {
-                'message': 'Errors in your request.',
-                'status': status.HTTP_400_BAD_REQUEST,
+                'message': 'Successfully updated.',
+                'status': status.HTTP_200_OK,
+                'data': serializer.data,
+            }
+            return Response(context, status.HTTP_200_OK)
+        except Student.DoesNotExist:
+            context = {
+                'message': 'Error 404, page not found.',
+                'status': status.HTTP_404_NOT_FOUND,
                 'errors': {
-                    'detail': serializer.errors,
+                    'detail': "Error 404, page not found.."
                 },
             }
-            return Response(context, status=status.HTTP_400_BAD_REQUEST)
-
-        # serializer.update()
-        self.update(request,*args,**kwargs)
-        # result = self.create(request,*args,**kwargs)
-        context = {
-            'message': 'Successfully updated.',
-            'status': status.HTTP_200_OK,
-            'data': serializer.data,
-        }
-        return Response(context, status.HTTP_200_OK)
+            return Response(context, status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, pk, *args,**kwargs):
         try:
