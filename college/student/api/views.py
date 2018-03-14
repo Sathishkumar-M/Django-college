@@ -3,12 +3,14 @@ from rest_framework.response import Response
 from django.http import HttpResponse, JsonResponse
 from rest_framework.parsers import JSONParser
 from student.models import Course,Student,Fee
-from .permissions import IsOwnerOrReadOnly
+from rest_framework.permissions import IsAdminUser
+# from .permissions import IsOwnerOrReadOnly
 from .serializers import StudentSerializer,CourseSerializer,StudentSerializerlist
 
 class CourseAPIView(generics.ListAPIView):
     lookup_field = 'pk'
     serializer_class = CourseSerializer
+    permission_classes = (IsAdminUser,)
 
     def get(self, request,*args,**kwargs):
         try:
@@ -33,6 +35,7 @@ class CourseAPIView(generics.ListAPIView):
 class StudentAPIView(mixins.CreateModelMixin,generics.ListAPIView):
     lookup_field = 'pk'
     # serializer_class = StudentSerializer
+    permission_classes = (IsAdminUser,)
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return StudentSerializerlist
@@ -92,7 +95,7 @@ class StudentRudView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'pk'
     serializer_class = StudentSerializer
     queryset = Student.objects.all()
-    # permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = (IsAdminUser,)
 
     def get(self, request, pk, format=None):
         try:
@@ -118,7 +121,6 @@ class StudentRudView(generics.RetrieveUpdateDestroyAPIView):
         try:
             obj = Student.objects.get(pk=pk)
             serializer = self.get_serializer(data=request.data)
-            print(serializer.is_valid())
             if not serializer.is_valid():
                 context = {
                     'message': 'Errors in your request.',

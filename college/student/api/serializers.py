@@ -21,7 +21,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
-
+    email = serializers.EmailField(max_length=255,allow_blank=False)
     class Meta:
         model = Student
         fields = [
@@ -31,6 +31,14 @@ class StudentSerializer(serializers.ModelSerializer):
         # fields = '__all__'
 
         read_only_fields = ['pk']
+
+    def validate_email(self,value):
+        qs = Student.objects.filter(email__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("This email already exists")
+        return value
 
 
 class StudentSerializerlist(StudentSerializer):
